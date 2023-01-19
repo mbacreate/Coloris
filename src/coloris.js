@@ -8,7 +8,7 @@
   const ctx = document.createElement('canvas').getContext('2d');
   const currentColor = { r: 0, g: 0, b: 0, h: 0, s: 0, v: 0, a: 1 };
   let container, picker, colorArea, colorAreaDims, colorMarker, colorPreview, colorValue, clearButton,
-      hueSlider, hueMarker, alphaSlider, alphaMarker, currentEl, currentFormat, oldColor;
+      closeButton, hueSlider, hueMarker, alphaSlider, alphaMarker, currentEl, currentFormat, oldColor;
 
   // Default settings
   const settings = {
@@ -21,6 +21,7 @@
     format: 'hex',
     formatToggle : false,
     swatches: [],
+    multipleSwatches: [],
     swatchesOnly: false,
     alpha: true,
     forceAlpha: false,
@@ -30,9 +31,12 @@
     defaultColor: '#000000',
     clearButton: false,
     clearLabel: 'Clear',
+    closeButton: false,
+    closeLabel: 'Close',
     a11y: {
       open: 'Open color picker',
       close: 'Close color picker',
+      clear: 'Clear the selected color',
       marker: 'Saturation: {s}. Brightness: {v}.',
       hueSlider: 'Hue slider',
       alphaSlider: 'Opacity slider',
@@ -125,6 +129,25 @@
             settings.swatches = options.swatches.slice();
           }
           break;
+        case 'multipleSwatches':
+          if (Array.isArray(options.multipleSwatches)) {
+            const swatchPanels = [];
+            options.multipleSwatches.forEach((panel, i) => {
+              const swatches = [];
+  
+              panel.swatches.forEach((swatch, j) => {
+                swatches.push(`<button type="button" id="clr-swatch-${i}-${j}" aria-labelledby="clr-swatch-label clr-swatch-${i}-${j}" style="color: ${swatch};">${swatch}</button>`);
+              });
+
+              swatchPanels.push(`<div id="clr-swatch-panel-${i}" class="clr-swatch-panel">${panel.name}<div id="clr-swatch-panel-${i}-swatches">${swatches.join('')}</div></div>`);
+  
+              //getEl('clr-swatches').innerHTML = swatches.length ? `<div>${swatches.join('')}</div>` : '';
+              //settings.swatches = options.swatches.slice();
+            })
+            getEl('clr-swatches-panels').innerHTML = swatchPanels.length ? `<div>${swatchPanels.join('')}</div>` : '';
+            settings.multipleSwatches = options.multipleSwatches.slice();
+          }
+          break;
         case 'swatchesOnly':
           settings.swatchesOnly = !!options.swatchesOnly;
           picker.setAttribute('data-minimal', settings.swatchesOnly);
@@ -163,6 +186,20 @@
           settings.clearLabel = options.clearLabel;
           clearButton.innerHTML = settings.clearLabel;
           break;
+        case 'closeButton':
+          settings.closeButton = !!options.closeButton;
+
+          if (settings.closeButton) {
+            picker.insertBefore(closeButton, colorPreview);
+          } else {
+            colorPreview.appendChild(closeButton);
+          }
+
+          break;
+        case 'closeLabel':
+          settings.closeLabel = options.closeLabel;
+          closeButton.innerHTML = settings.closeLabel;
+          break;
         case 'a11y':
           const labels = options.a11y;
           let update = false;
@@ -182,7 +219,8 @@
 
             openLabel.innerHTML = settings.a11y.open;
             swatchLabel.innerHTML = settings.a11y.swatch;
-            colorPreview.setAttribute('aria-label', settings.a11y.close);
+            closeButton.setAttribute('aria-label', settings.a11y.close);
+            clearButton.setAttribute('aria-label', settings.a11y.clear);
             hueSlider.setAttribute('aria-label', settings.a11y.hueSlider);
             alphaSlider.setAttribute('aria-label', settings.a11y.alphaSlider);
             colorValue.setAttribute('aria-label', settings.a11y.input);
@@ -460,7 +498,8 @@
    * @param {string} str String representing a color.
    */
   function setColorFromStr(str) {
-    const rgba = strToRGBA(str);
+    const fullStr = getCSSVar(str) || str;
+    const rgba = strToRGBA(fullStr);
     const hsva = RGBAtoHSVA(rgba);
 
     updateMarkerA11yLabel(hsva.s, hsva.v);
@@ -568,13 +607,7 @@
       y += container.scrollTop;
     }
 
-    x = (x < 0) ? 0 : (x > colorAreaDims.width) ? colorAreaDims.width : x;
-    y = (y < 0) ? 0 : (y > colorAreaDims.height) ? colorAreaDims.height : y;
-
-    colorMarker.style.left = `${x}px`;
-    colorMarker.style.top = `${y}px`;
-
-    setColorAtPosition(x, y);
+    setMarkerPosition(x, y);
 
     // Prevent scrolling while dragging the marker
     event.preventDefault();
@@ -584,16 +617,34 @@
   /**
    * Move the color marker when the arrow keys are pressed.
    * @param {number} offsetX The horizontal amount to move.
-   * * @param {number} offsetY The vertical amount to move.
+   * @param {number} offsetY The vertical amount to move.
    */
   function moveMarkerOnKeydown(offsetX, offsetY) {
-    const x = colorMarker.style.left.replace('px', '') * 1 + offsetX;
-    const y =  colorMarker.style.top.replace('px', '') * 1 + offsetY;
+    let x = colorMarker.style.left.replace('px', '') * 1 + offsetX;
+    let y = colorMarker.style.top.replace('px', '') * 1 + offsetY;
 
+    setMarkerPosition(x, y);
+  }
+
+  /**
+   * Set the color marker's position.
+   * @param {number} x Left position.
+   * @param {number} y Top position.
+   */
+  function setMarkerPosition(x, y) {
+    // Make sure the marker doesn't go out of bounds
+    x = (x < 0) ? 0 : (x > colorAreaDims.width) ? colorAreaDims.width : x;
+    y = (y < 0) ? 0 : (y > colorAreaDims.height) ? colorAreaDims.height : y;
+
+    // Set the position
     colorMarker.style.left = `${x}px`;
     colorMarker.style.top = `${y}px`;
 
+    // Update the color
     setColorAtPosition(x, y);
+
+    // Make sure the marker is focused
+    colorMarker.focus();
   }
 
   /**
@@ -760,6 +811,22 @@
   }
 
   /**
+   * Get string from CSS variable.
+   * @param {string} cssVar String in the format var(--variable-name).
+   * @return {string} String representing a color.
+   */
+  function getCSSVar(cssVar) {
+    const regex = /^var\((--.+)\)$/i;
+    const match = regex.exec(cssVar);
+    if(match) {
+      let cssVariableName = match[1];
+      return window.getComputedStyle(document.documentElement).getPropertyValue(cssVariableName)?.trim() || cssVar;
+    } else {
+      return cssVar;
+    }
+  }
+
+  /**
    * Parse a string to RGBA.
    * @param {string} str String representing a color.
    * @return {object} Red, green, blue and alpha values.
@@ -896,8 +963,11 @@
       '</fieldset>'+
     '</div>'+
     '<div id="clr-swatches" class="clr-swatches"></div>'+
-    `<button type="button" id="clr-clear" class="clr-clear">${settings.clearLabel}</button>`+
-    `<button type="button" id="clr-color-preview" class="clr-preview" aria-label="${settings.a11y.close}"></button>`+
+    '<div id="clr-swatches-panels" class="clr-swatches-panels"></div>'+
+    `<button type="button" id="clr-clear" class="clr-clear" aria-label="${settings.a11y.clear}">${settings.clearLabel}</button>`+
+    '<div id="clr-color-preview" class="clr-preview">'+
+      `<button type="button" id="clr-close" class="clr-close" aria-label="${settings.a11y.close}">${settings.closeLabel}</button>`+
+    '</div>'+
     `<span id="clr-open-label" hidden>${settings.a11y.open}</span>`+
     `<span id="clr-swatch-label" hidden>${settings.a11y.swatch}</span>`;
 
@@ -908,6 +978,7 @@
     colorArea = getEl('clr-color-area');
     colorMarker = getEl('clr-color-marker');
     clearButton = getEl('clr-clear');
+    closeButton = getEl('clr-close');
     colorPreview = getEl('clr-color-preview');
     colorValue = getEl('clr-color-value');
     hueSlider = getEl('clr-hue-slider');
@@ -952,7 +1023,7 @@
       closePicker();
     });
 
-    addListener(colorPreview, 'click', event => {
+    addListener(closeButton, 'click', event => {
       pickColor();
       closePicker();
     });
@@ -963,7 +1034,7 @@
       pickColor();
     });
 
-    addListener(picker, 'click', '.clr-swatches button', event => {
+    addListener(picker, 'click', '.clr-swatches button, .clr-swatches-panels button', event => {
       setColorFromStr(event.target.textContent);
       pickColor();
 
@@ -986,9 +1057,13 @@
     });
 
     addListener(document, 'keydown', event => {
+      const navKeys = ['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
       if (event.key === 'Escape') {
         closePicker(true);
-      } else if (event.key === 'Tab') {
+
+      // Display focus rings when using the keyboard
+      } else if (navKeys.includes(event.key)) {
         picker.classList.add('clr-keyboard-nav');
       }
     });
@@ -1011,7 +1086,7 @@
         ArrowRight: [1, 0]
       };
 
-      if (Object.keys(movements).indexOf(event.key) !== -1) {
+      if (Object.keys(movements).includes(event.key)) {
         moveMarkerOnKeydown(...movements[event.key]);
         event.preventDefault();
       }

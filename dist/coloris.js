@@ -8,7 +8,7 @@
   var ctx = document.createElement('canvas').getContext('2d');
   var currentColor = { r: 0, g: 0, b: 0, h: 0, s: 0, v: 0, a: 1 };
   var container, picker, colorArea, colorAreaDims, colorMarker, colorPreview, colorValue, clearButton,
-  hueSlider, hueMarker, alphaSlider, alphaMarker, currentEl, currentFormat, oldColor;
+  closeButton, hueSlider, hueMarker, alphaSlider, alphaMarker, currentEl, currentFormat, oldColor;
 
   // Default settings
   var settings = {
@@ -21,6 +21,7 @@
     format: 'hex',
     formatToggle: false,
     swatches: [],
+    multipleSwatches: [],
     swatchesOnly: false,
     alpha: true,
     forceAlpha: false,
@@ -30,9 +31,12 @@
     defaultColor: '#000000',
     clearButton: false,
     clearLabel: 'Clear',
+    closeButton: false,
+    closeLabel: 'Close',
     a11y: {
       open: 'Open color picker',
       close: 'Close color picker',
+      clear: 'Clear the selected color',
       marker: 'Saturation: {s}. Brightness: {v}.',
       hueSlider: 'Hue slider',
       alphaSlider: 'Opacity slider',
@@ -125,6 +129,25 @@
               settings.swatches = options.swatches.slice();})();
           }
           break;
+        case 'multipleSwatches':
+          if (Array.isArray(options.multipleSwatches)) {(function () {
+              var swatchPanels = [];
+              options.multipleSwatches.forEach(function (panel, i) {
+                var swatches = [];
+
+                panel.swatches.forEach(function (swatch, j) {
+                  swatches.push("<button type=\"button\" id=\"clr-swatch-" + i + "-" + j + "\" aria-labelledby=\"clr-swatch-label clr-swatch-" + i + "-" + j + "\" style=\"color: " + swatch + ";\">" + swatch + "</button>");
+                });
+
+                swatchPanels.push("<div id=\"clr-swatch-panel-" + i + "\" class=\"clr-swatch-panel\">" + panel.name + "<div id=\"clr-swatch-panel-" + i + "-swatches\">" + swatches.join('') + "</div></div>");
+
+                //getEl('clr-swatches').innerHTML = swatches.length ? `<div>${swatches.join('')}</div>` : '';
+                //settings.swatches = options.swatches.slice();
+              });
+              getEl('clr-swatches-panels').innerHTML = swatchPanels.length ? "<div>" + swatchPanels.join('') + "</div>" : '';
+              settings.multipleSwatches = options.multipleSwatches.slice();})();
+          }
+          break;
         case 'swatchesOnly':
           settings.swatchesOnly = !!options.swatchesOnly;
           picker.setAttribute('data-minimal', settings.swatchesOnly);
@@ -163,6 +186,20 @@
           settings.clearLabel = options.clearLabel;
           clearButton.innerHTML = settings.clearLabel;
           break;
+        case 'closeButton':
+          settings.closeButton = !!options.closeButton;
+
+          if (settings.closeButton) {
+            picker.insertBefore(closeButton, colorPreview);
+          } else {
+            colorPreview.appendChild(closeButton);
+          }
+
+          break;
+        case 'closeLabel':
+          settings.closeLabel = options.closeLabel;
+          closeButton.innerHTML = settings.closeLabel;
+          break;
         case 'a11y':
           var labels = options.a11y;
           var update = false;
@@ -182,7 +219,8 @@
 
             openLabel.innerHTML = settings.a11y.open;
             swatchLabel.innerHTML = settings.a11y.swatch;
-            colorPreview.setAttribute('aria-label', settings.a11y.close);
+            closeButton.setAttribute('aria-label', settings.a11y.close);
+            clearButton.setAttribute('aria-label', settings.a11y.clear);
             hueSlider.setAttribute('aria-label', settings.a11y.hueSlider);
             alphaSlider.setAttribute('aria-label', settings.a11y.alphaSlider);
             colorValue.setAttribute('aria-label', settings.a11y.input);
@@ -460,7 +498,8 @@
    * @param {string} str String representing a color.
    */
   function setColorFromStr(str) {
-    var rgba = strToRGBA(str);
+    var fullStr = getCSSVar(str) || str;
+    var rgba = strToRGBA(fullStr);
     var hsva = RGBAtoHSVA(rgba);
 
     updateMarkerA11yLabel(hsva.s, hsva.v);
@@ -568,13 +607,7 @@
       y += container.scrollTop;
     }
 
-    x = x < 0 ? 0 : x > colorAreaDims.width ? colorAreaDims.width : x;
-    y = y < 0 ? 0 : y > colorAreaDims.height ? colorAreaDims.height : y;
-
-    colorMarker.style.left = x + "px";
-    colorMarker.style.top = y + "px";
-
-    setColorAtPosition(x, y);
+    setMarkerPosition(x, y);
 
     // Prevent scrolling while dragging the marker
     event.preventDefault();
@@ -584,16 +617,34 @@
   /**
    * Move the color marker when the arrow keys are pressed.
    * @param {number} offsetX The horizontal amount to move.
-   * * @param {number} offsetY The vertical amount to move.
+   * @param {number} offsetY The vertical amount to move.
    */
   function moveMarkerOnKeydown(offsetX, offsetY) {
     var x = colorMarker.style.left.replace('px', '') * 1 + offsetX;
     var y = colorMarker.style.top.replace('px', '') * 1 + offsetY;
 
+    setMarkerPosition(x, y);
+  }
+
+  /**
+   * Set the color marker's position.
+   * @param {number} x Left position.
+   * @param {number} y Top position.
+   */
+  function setMarkerPosition(x, y) {
+    // Make sure the marker doesn't go out of bounds
+    x = x < 0 ? 0 : x > colorAreaDims.width ? colorAreaDims.width : x;
+    y = y < 0 ? 0 : y > colorAreaDims.height ? colorAreaDims.height : y;
+
+    // Set the position
     colorMarker.style.left = x + "px";
     colorMarker.style.top = y + "px";
 
+    // Update the color
     setColorAtPosition(x, y);
+
+    // Make sure the marker is focused
+    colorMarker.focus();
   }
 
   /**
@@ -760,6 +811,22 @@
   }
 
   /**
+   * Get string from CSS variable.
+   * @param {string} cssVar String in the format var(--variable-name).
+   * @return {string} String representing a color.
+   */
+  function getCSSVar(cssVar) {
+    var regex = /^var\((--.+)\)$/i;
+    var match = regex.exec(cssVar);
+    if (match) {var _window$getComputedSt;
+      var cssVariableName = match[1];
+      return ((_window$getComputedSt = window.getComputedStyle(document.documentElement).getPropertyValue(cssVariableName)) == null ? void 0 : _window$getComputedSt.trim()) || cssVar;
+    } else {
+      return cssVar;
+    }
+  }
+
+  /**
    * Parse a string to RGBA.
    * @param {string} str String representing a color.
    * @return {object} Red, green, blue and alpha values.
@@ -895,9 +962,12 @@
     '<span></span>' +
     '</fieldset>' +
     '</div>' +
-    '<div id="clr-swatches" class="clr-swatches"></div>' + ("<button type=\"button\" id=\"clr-clear\" class=\"clr-clear\">" +
-    settings.clearLabel + "</button>") + ("<button type=\"button\" id=\"clr-color-preview\" class=\"clr-preview\" aria-label=\"" +
-    settings.a11y.close + "\"></button>") + ("<span id=\"clr-open-label\" hidden>" +
+    '<div id="clr-swatches" class="clr-swatches"></div>' +
+    '<div id="clr-swatches-panels" class="clr-swatches-panels"></div>' + ("<button type=\"button\" id=\"clr-clear\" class=\"clr-clear\" aria-label=\"" +
+    settings.a11y.clear + "\">" + settings.clearLabel + "</button>") +
+    '<div id="clr-color-preview" class="clr-preview">' + ("<button type=\"button\" id=\"clr-close\" class=\"clr-close\" aria-label=\"" +
+    settings.a11y.close + "\">" + settings.closeLabel + "</button>") +
+    '</div>' + ("<span id=\"clr-open-label\" hidden>" +
     settings.a11y.open + "</span>") + ("<span id=\"clr-swatch-label\" hidden>" +
     settings.a11y.swatch + "</span>");
 
@@ -908,6 +978,7 @@
     colorArea = getEl('clr-color-area');
     colorMarker = getEl('clr-color-marker');
     clearButton = getEl('clr-clear');
+    closeButton = getEl('clr-close');
     colorPreview = getEl('clr-color-preview');
     colorValue = getEl('clr-color-value');
     hueSlider = getEl('clr-hue-slider');
@@ -952,7 +1023,7 @@
       closePicker();
     });
 
-    addListener(colorPreview, 'click', function (event) {
+    addListener(closeButton, 'click', function (event) {
       pickColor();
       closePicker();
     });
@@ -963,7 +1034,7 @@
       pickColor();
     });
 
-    addListener(picker, 'click', '.clr-swatches button', function (event) {
+    addListener(picker, 'click', '.clr-swatches button, .clr-swatches-panels button', function (event) {
       setColorFromStr(event.target.textContent);
       pickColor();
 
@@ -986,9 +1057,13 @@
     });
 
     addListener(document, 'keydown', function (event) {
+      var navKeys = ['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
       if (event.key === 'Escape') {
         closePicker(true);
-      } else if (event.key === 'Tab') {
+
+        // Display focus rings when using the keyboard
+      } else if (navKeys.includes(event.key)) {
         picker.classList.add('clr-keyboard-nav');
       }
     });
@@ -1011,7 +1086,7 @@
         ArrowRight: [1, 0] };
 
 
-      if (Object.keys(movements).indexOf(event.key) !== -1) {
+      if (Object.keys(movements).includes(event.key)) {
         moveMarkerOnKeydown.apply(void 0, movements[event.key]);
         event.preventDefault();
       }

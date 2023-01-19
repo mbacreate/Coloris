@@ -8,6 +8,10 @@
     <style type="text/css">
     @import url(https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap);
 
+    :root {
+      --main-color: rgb(197, 41, 41);
+    }
+
     body {
       height: 120vh;
       margin: 30px;
@@ -122,6 +126,8 @@
       theme: 'pill',
       themeMode: 'dark',
       formatToggle: true,
+      closeButton: true,
+      clearButton: true,
       swatches: [
         '#067bc2',
         '#84bcda',
@@ -129,13 +135,62 @@
         '#ecc30b',
         '#f37748',
         '#d56062'
-      ]
+      ],
+      multipleSwatches: [
+        {
+          name: "Test",
+          swatches: [
+            '#067bc2',
+            '#84bcda',
+            '#80e377',
+            '#ecc30b',
+            '#f37748',
+            '#d56062'
+          ]
+        },
+        {
+          name: "Second",
+          swatches: [
+            '#067bc2',
+            '#84bcda',
+            '#80e377',
+            '#ecc30b',
+            '#f37748',
+            'var(--main-color)'
+          ]
+        }
+      ],
+      swatchesOnly: true
     });
 
     Coloris.setInstance('.instance2', { theme: 'polaroid' });
 
     Coloris.setInstance('.instance3', {
       theme: 'polaroid',
+      multipleSwatches: [
+        {
+          name: "Test",
+          swatches: [
+            '#067bc2',
+            '#84bcda',
+            '#80e377',
+            '#ecc30b',
+            '#f37748',
+            '#d56062'
+          ]
+        },
+        {
+          name: "Second",
+          swatches: [
+            '#067bc2',
+            '#84bcda',
+            '#80e377',
+            '#ecc30b',
+            '#f37748',
+            'var(--main-color)'
+          ]
+        }
+      ],
       swatchesOnly: true
     });
 

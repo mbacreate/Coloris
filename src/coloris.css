@@ -6,7 +6,7 @@
   z-index: 1000;
   border-radius: 10px;
   background-color: #fff;
-  justify-content: space-between;
+  justify-content: flex-end;
   box-shadow: 0 0 5px rgba(0,0,0,.05), 0 5px 20px rgba(0,0,0,.1);
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -187,20 +187,20 @@
   background-color: #666;
 }
 
-.clr-swatches {
+.clr-swatches, .clr-swatches-panels {
   order: 2;
   width: calc(100% - 32px);
   margin: 0 16px;
 }
 
-.clr-swatches div {
+.clr-swatches div, .clr-swatches-panels div {
   display: flex;
   flex-wrap: wrap;
   padding-bottom: 12px;
   justify-content: center;
 }
 
-.clr-swatches button {
+.clr-swatches button, .clr-swatches-panels button {
   position: relative;
   width: 20px;
   height: 20px;
@@ -215,7 +215,7 @@
   cursor: pointer;
 }
 
-.clr-swatches button:after {
+.clr-swatches button:after, .clr-swatches-panels button:after {
   content: '';
   display: block;
   position: absolute;
@@ -232,7 +232,7 @@ input.clr-color {
   order: 1;
   width: calc(100% - 80px);
   height: 32px;
-  margin: 15px 20px 20px 0;
+  margin: 15px 20px 20px auto;
   padding: 0 10px;
   border: 1px solid #ddd;
   border-radius: 16px;
@@ -249,11 +249,12 @@ input.clr-color:focus {
   border: 1px solid #1e90ff;
 }
 
+.clr-close,
 .clr-clear {
   display: none;
   order: 2;
   height: 24px;
-  margin: 0 20px 20px auto;
+  margin: 0 20px 20px;
   padding: 0 20px;
   border: 0;
   border-radius: 12px;
@@ -265,16 +266,18 @@ input.clr-color:focus {
   cursor: pointer;
 }
 
+.clr-close {
+  display: block;
+  margin: 0 20px 20px auto;
+}
+
 .clr-preview {
   position: relative;
   width: 32px;
   height: 32px;
   margin: 15px 0 20px 20px;
-  padding: 0;
-  border: 0;
   border-radius: 50%;
   overflow: hidden;
-  cursor: pointer;
 }
 
 .clr-preview:before,
@@ -293,6 +296,19 @@ input.clr-color:focus {
   border: 0;
   background-color: currentColor;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.1);
+}
+
+.clr-preview button {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  text-indent: -9999px;
+  cursor: pointer;
 }
 
 .clr-marker,
@@ -494,10 +510,14 @@ input.clr-color:focus {
 
 .clr-polaroid input.clr-color {
   width: calc(100% - 60px);
-  margin: 10px 10px 15px 0;
+  margin: 10px 10px 15px auto;
 }
 
 .clr-polaroid .clr-clear {
+  margin: 0 10px 15px 10px;
+}
+
+.clr-polaroid .clr-close {
   margin: 0 10px 15px auto;
 }
 
