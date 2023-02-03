@@ -345,7 +345,8 @@
 
       // Only update the preview if the field has been previously wrapped
       if (parent.classList.contains('clr-field')) {
-        parent.style.color = event.target.value;
+        //parent.style.color = event.target.value;
+        parent.style.background = event.target.value;
       }
     });
   }
@@ -439,7 +440,12 @@
         wrapper.innerHTML = `<button type="button" aria-labelledby="clr-open-label"></button>`;
         parentNode.insertBefore(wrapper, field);
         wrapper.setAttribute('class', 'clr-field');
-        wrapper.style.color = field.value;
+        if(parentNode.classList.contains('full')){
+          wrapper.style.background = field.value;
+        } else {  
+          wrapper.style.color = field.value;
+        }
+        //wrapper.style.color = field.value;
         wrapper.appendChild(field);
       }
     });
@@ -499,6 +505,12 @@
    */
   function setColorFromStr(str) {
     const fullStr = getCSSVar(str) || str;
+    if(checkColorIsGradient(fullStr)) {
+      console.log('gradient');
+      picker.style.color = fullStr;
+      return;
+    }
+
     const rgba = strToRGBA(fullStr);
     const hsva = RGBAtoHSVA(rgba);
 
@@ -824,6 +836,16 @@
     } else {
       return cssVar;
     }
+  }
+
+  /**
+   * Check if color string is a gradient.
+   * @param {string} str String representing a potential gradient.
+   * @return {boolean} Gradient true or false.
+   */
+  function checkColorIsGradient(str) {
+    const regex = /^((linear-gradient)|(radial-gradient))\(.+\)$/i;
+    return regex.test(str);
   }
 
   /**

@@ -10,6 +10,7 @@
 
     :root {
       --main-color: rgb(197, 41, 41);
+      --gradient-color: linear-gradient(90deg, rgba(155,168,47,1) 0%, rgba(176,32,32,1) 55%, rgba(56,73,180,1) 100%);
     }
 
     body {
@@ -149,13 +150,12 @@
           ]
         },
         {
-          name: "Second",
+          name: "SSS",
           swatches: [
             '#067bc2',
             '#84bcda',
-            '#80e377',
-            '#ecc30b',
             '#f37748',
+            'var(--gradient-color)',
             'var(--main-color)'
           ]
         }
@@ -186,7 +186,8 @@
             '#84bcda',
             '#80e377',
             '#ecc30b',
-            '#f37748',
+            'rgb(155,168,47)',
+            'var(--gradient-color)',
             'var(--main-color)'
           ]
         }
