@@ -3,13 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Coloris examples</title>
-    <link rel="stylesheet" type="text/css" href="coloris.min.css">
+    <title>color-var-picker examples</title>
+    <link rel="stylesheet" type="text/css" href="color-var-picker.min.css">
     <style type="text/css">
     @import url(https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap);
 
     :root {
       --main-color: rgb(197, 41, 41);
+      --gradient-color: linear-gradient(90deg, rgba(155,168,47,1) 0%, rgba(176,32,32,1) 55%, rgba(56,73,180,1) 100%);
+      --demo-color-1: hsl(128, 56%, 50%);
+      --demo-color-2: #a7009c;
+      --demo-color-3: GoldenRod;
+      --demo-color-4: rgba(176,32,32, 0.8);
     }
 
     body {
@@ -47,8 +52,8 @@
       margin-bottom: 30px;
     }
 
-    .square .clr-field button,
-    .circle .clr-field button {
+    .square .color-var-picker-field button,
+    .circle .color-var-picker-field button {
       width: 22px;
       height: 22px;
       left: 5px;
@@ -56,16 +61,16 @@
       border-radius: 5px;
     }
 
-    .square .clr-field input,
-    .circle .clr-field input {
+    .square .color-var-picker-field input,
+    .circle .color-var-picker-field input {
       padding-left: 36px;
     }
 
-    .circle .clr-field button {
+    .circle .color-var-picker-field button {
       border-radius: 50%;
     }
 
-    .full .clr-field button {
+    .full .color-var-picker-field button {
       width: 100%;
       height: 100%;
       border-radius: 5px;
@@ -74,7 +79,6 @@
     </style>
   </head>
   <body>
-    <a href="https://github.com/mdbassit/Coloris">View <b>Coloris</b> on GitHub</a>
     <h1>Coloris examples</h1>
     <div class="examples">
       <div class="example">
@@ -83,63 +87,49 @@
       </div>
       <div class="example square">
         <p>Rounded square thumbnail</p>
-        <input type="text" class="coloris instance1" value="rgb(255, 0, 0)">
+        <input type="text" class="picker instance1" value="rgb(255, 0, 0)">
       </div>
       <div class="example circle">
         <p>Circular thumbnail</p>
-        <input type="text" class="coloris instance2" value="#cc458faa">
+        <input type="text" class="picker instance2" value="#cc458faa">
       </div>
       <div class="example full">
         <p>Full size thumbnail</p>
-        <input type="text" class="coloris instance3" value="#ffcc00">
-      </div>
-      <div class="example square" style="position: relative; top: 300px; padding-bottom: 30px;">
-        <p>The dialog will appear on top of this field for lack of space under it.</p>
-        <input type="text" class="coloris" value="#00a5cc">
+        <input type="text" class="picker instance3" value="#ffcc00">
       </div>
     </div>
-    <script type="text/javascript" src="coloris.min.js"></script>
+    <script type="text/javascript" src="color-var-picker.js"></script>
     <script type="text/javascript">
 
     /** Default configuration **/
 
-    Coloris({
-      el: '.coloris',
+    ColorVarPicker({
+      el: '.picker',
       swatches: [
-        '#264653',
-        '#2a9d8f',
-        '#e9c46a',
-        '#f4a261',
-        '#e76f51',
-        '#d62828',
-        '#023e8a',
-        '#0077b6',
-        '#0096c7',
-        '#00b4d8',
-        '#48cae4'
+        {
+          name: "Test",
+          values: [
+            '#067bc2',
+            '#84bcda',
+            'var(--demo-color-1)',
+            'var(--demo-color-2)',
+            'var(--demo-color-3)',
+            'var(--demo-color-4)',
+          ]
+        }
       ]
     });
 
     /** Instances **/
 
-    Coloris.setInstance('.instance1', {
-      theme: 'pill',
+    ColorVarPicker.setInstance('.instance1', {
+      theme: 'polaroid',
       themeMode: 'dark',
-      formatToggle: true,
-      closeButton: true,
-      clearButton: true,
+      format: 'auto',
       swatches: [
-        '#067bc2',
-        '#84bcda',
-        '#80e377',
-        '#ecc30b',
-        '#f37748',
-        '#d56062'
-      ],
-      multipleSwatches: [
         {
           name: "Test",
-          swatches: [
+          values: [
             '#067bc2',
             '#84bcda',
             '#80e377',
@@ -149,28 +139,28 @@
           ]
         },
         {
-          name: "Second",
-          swatches: [
+          name: "SSS",
+          values: [
             '#067bc2',
             '#84bcda',
-            '#80e377',
-            '#ecc30b',
             '#f37748',
+            'var(--gradient-color)',
             'var(--main-color)'
           ]
         }
       ],
-      swatchesOnly: true
+      forceVariables: false,
     });
 
-    Coloris.setInstance('.instance2', { theme: 'polaroid' });
+    ColorVarPicker.setInstance('.instance2', { theme: 'polaroid' });
 
-    Coloris.setInstance('.instance3', {
+    ColorVarPicker.setInstance('.instance3', {
       theme: 'polaroid',
-      multipleSwatches: [
+      forceVariables: true,
+      swatches: [
         {
           name: "Test",
-          swatches: [
+          values: [
             '#067bc2',
             '#84bcda',
             '#80e377',
@@ -181,17 +171,17 @@
         },
         {
           name: "Second",
-          swatches: [
+          values: [
             '#067bc2',
             '#84bcda',
             '#80e377',
             '#ecc30b',
-            '#f37748',
+            'rgb(155,168,47)',
+            'var(--gradient-color)',
             'var(--main-color)'
           ]
         }
-      ],
-      swatchesOnly: true
+      ]
     });
 
     </script>

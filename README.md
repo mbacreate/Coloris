@@ -159,7 +159,7 @@ Coloris({
   // of the document. Use the "parent" option to set a custom container.
   // Note: In this mode, the best way to get the picked color, is listening to the "coloris:pick"
   // event and reading the value from the event detail (See example in the Events section). The
-  // other way is to read the value of the input field with the id "clr-color-value".
+  // other way is to read the value of the input field with the id "color-var-picker-color-value".
   inline: false,
 
   // In inline mode, this is the default color that is set when the picker is initialized.
