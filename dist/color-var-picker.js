@@ -894,5 +894,4 @@
 
   // Init the color picker when the DOM is ready
   DOMReady(init);
-
 })(window, document, Math);
